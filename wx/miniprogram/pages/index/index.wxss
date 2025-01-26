@@ -4,7 +4,6 @@ page {
   display: flex;
   flex-direction: column;
 }
-
 .scrollarea {
   flex: 1;
   overflow-y: hidden;
