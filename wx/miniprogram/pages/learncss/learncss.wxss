@@ -1,0 +1,25 @@
+/* pages/learncss/learncss.wxss */
+page {
+    height: 100%;
+}
+
+.item.cu-avatar.xl {
+    width: unset;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+.list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    height: 750rpx;
+    width: 100%;
+}
+
+.blue {
+    color: blue;
+}
+.red {
+    color: red;
+}
