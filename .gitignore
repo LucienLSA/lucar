@@ -6,4 +6,5 @@ node_modules
 wx/miniprogram/**/*.js
 !**/wx/miniprogram/service/proto_gen/**/*.js
 miniprogram_npm
-
+appSecret.key
+privateKey.key
