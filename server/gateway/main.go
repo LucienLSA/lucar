@@ -5,6 +5,7 @@ import (
 	"log"
 	authpb "lucar/auth/api/gen/v1"
 	rentalpb "lucar/rental/api/gen/v1"
+	"lucar/shared/server"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	logger, err := server.NewZapLogger()
+	if err != nil {
+		log.Fatalf("can not create zap logger:%v\n", err)
+	}
 	c := context.Background()
 	c, cancel := context.WithCancel(c)
 	defer cancel()
@@ -25,19 +30,33 @@ func main() {
 			},
 		},
 	))
-	err := authpb.RegisterAuthServiceHandlerFromEndpoint(
-		c, mux, "localhost:8088",
-		[]grpc.DialOption{grpc.WithInsecure()},
-	)
-	if err != nil {
-		log.Fatalf("can not register auth service:%v\n", err)
+	serverConfig := []struct {
+		name         string
+		addr         string
+		registerFunc func(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error)
+	}{
+		{
+			name:         "auth",
+			addr:         "localhost:8088",
+			registerFunc: authpb.RegisterAuthServiceHandlerFromEndpoint,
+		},
+		{
+			name:         "rental",
+			addr:         "localhost:8089",
+			registerFunc: rentalpb.RegisterTripServiceHandlerFromEndpoint,
+		},
 	}
-	err = rentalpb.RegisterTripServiceHandlerFromEndpoint(
-		c, mux, "localhost:8089",
-		[]grpc.DialOption{grpc.WithInsecure()},
-	)
-	if err != nil {
-		log.Fatalf("can not register auth service:%v\n", err)
+
+	for _, s := range serverConfig {
+		err := s.registerFunc(
+			c, mux, s.addr,
+			[]grpc.DialOption{grpc.WithInsecure()},
+		)
+		if err != nil {
+			logger.Sugar().Fatalf("can not register service:%s:%v\n", s.name, err)
+		}
 	}
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	addr := ":8080"
+	logger.Sugar().Infof("grpc gateway started at %s", addr)
+	logger.Sugar().Fatal(http.ListenAndServe(addr, mux))
 }

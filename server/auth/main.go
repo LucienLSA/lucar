@@ -8,7 +8,7 @@ import (
 	"lucar/auth/dao"
 	"lucar/auth/token"
 	"lucar/auth/wechat"
-	"net"
+	"lucar/shared/server"
 	"os"
 	"time"
 
@@ -18,13 +18,9 @@ import (
 )
 
 func main() {
-	logger, err := newZapLogger()
+	logger, err := server.NewZapLogger()
 	if err != nil {
 		log.Fatalf("can not create logger: %v\n", zap.Error(err))
-	}
-	lis, err := net.Listen("tcp", ":8088")
-	if err != nil {
-		logger.Fatal("can not listen: %v\n", zap.Error(err))
 	}
 	mdb, err := dao.InitMongo()
 	if err != nil {
@@ -50,25 +46,22 @@ func main() {
 	if err != nil {
 		logger.Fatal("can not read appSecret", zap.Error(err))
 	}
-	s := grpc.NewServer()
-	authpb.RegisterAuthServiceServer(s, &auth.Service{
-		OpenIDResolver: &wechat.Service{
-			AppID:     "wxe05234e87fd5ccb1",
-			AppSecret: string(aSBytes),
+	err = server.RunGRPCServer(&server.GRPCConfig{
+		Name:   "auth",
+		Addr:   "8088",
+		Logger: logger,
+		RegisterFunc: func(s *grpc.Server) {
+			authpb.RegisterAuthServiceServer(s, &auth.Service{
+				OpenIDResolver: &wechat.Service{
+					AppID:     "wxe05234e87fd5ccb1",
+					AppSecret: string(aSBytes),
+				},
+				Mongo:          dao.NewMongo(mdb.Database("lucar")),
+				Logger:         logger,
+				TokenExpire:    2 * time.Hour,
+				TokenGenerator: token.NewJwtTokenGen("lucar/auth", privKey),
+			})
 		},
-		Mongo:          dao.NewMongo(mdb.Database("lucar")),
-		Logger:         logger,
-		TokenExpire:    2 * time.Hour,
-		TokenGenerator: token.NewJwtTokenGen("lucar/auth", privKey),
 	})
-	err = s.Serve(lis)
-	if err != nil {
-		logger.Fatal("can not server", zap.Error(err))
-	}
-}
-
-func newZapLogger() (*zap.Logger, error) {
-	cfg := zap.NewDevelopmentConfig()
-	cfg.EncoderConfig.TimeKey = ""
-	return cfg.Build()
+	logger.Sugar().Fatal(err)
 }

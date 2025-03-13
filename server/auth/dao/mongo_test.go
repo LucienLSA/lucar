@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 	"lucar/shared/id"
-	mgo "lucar/shared/mongo"
+	mgutil "lucar/shared/mongo"
 	"lucar/shared/mongo/objid"
 	mongotesting "lucar/shared/mongo/testing"
 	"os"
@@ -51,19 +51,19 @@ func TestResolveAccountID(t *testing.T) {
 	m := NewMongo(client.Database("lucar"))
 	_, err = m.col.InsertMany(ctx, []interface{}{
 		bson.M{
-			mgo.IDField: objid.MustFromID(id.AccountID("5f7c245ab0361e00ffb9fd6f")),
-			openIDField: "openid_1",
+			mgutil.IDFieldName: objid.MustFromID(id.AccountID("5f7c245ab0361e00ffb9fd6f")),
+			openIDField:        "openid_1",
 		},
 		bson.M{
-			mgo.IDField: objid.MustFromID(id.AccountID("5f7c245ab0361e00ffb9fd70")),
-			openIDField: "openid_2",
+			mgutil.IDFieldName: objid.MustFromID(id.AccountID("5f7c245ab0361e00ffb9fd70")),
+			openIDField:        "openid_2",
 		},
 	})
 	if err != nil {
 		t.Fatalf("cannot insert initial values: %v", err)
 	}
 
-	m.NewObjID = func() primitive.ObjectID {
+	mgutil.NewObjID = func() primitive.ObjectID {
 		objID := objid.MustFromID(id.AccountID("67ccf51a69f3d4554b28a87c"))
 		return objID
 	}
@@ -114,5 +114,5 @@ func TestResolveAccountID(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
-	os.Exit(mongotesting.RunWithMongoInDocker(m, &mongoURI))
+	os.Exit(mongotesting.RunWithMongoInDocker(m, mongoURI))
 }
