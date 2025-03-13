@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	logger, err := zap.NewDevelopment()
+	logger, err := newZapLogger()
 	if err != nil {
 		log.Fatalf("can not create logger: %v\n", zap.Error(err))
 	}
@@ -67,8 +67,8 @@ func main() {
 	}
 }
 
-// func newZapLogger() (*zap.Logger, error) {
-// 	cfg := zap.NewDevelopmentConfig()
-// 	cfg.EncoderConfig.TimeKey = ""
-// 	return cfg.Build()
-// }
+func newZapLogger() (*zap.Logger, error) {
+	cfg := zap.NewDevelopmentConfig()
+	cfg.EncoderConfig.TimeKey = ""
+	return cfg.Build()
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	authpb "lucar/auth/api/gen/v1"
+	rentalpb "lucar/rental/api/gen/v1"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -26,6 +27,13 @@ func main() {
 	))
 	err := authpb.RegisterAuthServiceHandlerFromEndpoint(
 		c, mux, "localhost:8088",
+		[]grpc.DialOption{grpc.WithInsecure()},
+	)
+	if err != nil {
+		log.Fatalf("can not register auth service:%v\n", err)
+	}
+	err = rentalpb.RegisterTripServiceHandlerFromEndpoint(
+		c, mux, "localhost:8089",
 		[]grpc.DialOption{grpc.WithInsecure()},
 	)
 	if err != nil {
